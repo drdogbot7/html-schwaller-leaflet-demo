@@ -1,0 +1,731 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Historical Locations Map</title>
+    
+    <!-- Leaflet CSS -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.css" />
+    
+    <style>
+        body {
+            margin: 0;
+            padding: 0;
+            font-family: Arial, sans-serif;
+        }
+        #map {
+            height: 100vh;
+            width: 50%;
+        }
+        .info-panel {
+            position: absolute;
+            top: 10px;
+            right: 10px;
+            z-index: 1000;
+            background-color: white;
+            padding: 15px;
+            border-radius: 5px;
+            box-shadow: 0 0 10px rgba(0,0,0,0.2);
+            max-width: 300px;
+        }
+        .title {
+            font-weight: bold;
+            margin-bottom: 10px;
+            font-size: 16px;
+        }
+        .subtitle {
+            font-size: 14px;
+            margin-bottom: 5px;
+        }
+        .custom-popup .leaflet-popup-content {
+            margin: 12px;
+            max-height: 250px;
+            overflow-y: auto;
+        }
+        .popup-title {
+            font-weight: bold;
+            font-size: 14px;
+            margin-bottom: 5px;
+            border-bottom: 1px solid #ddd;
+            padding-bottom: 5px;
+        }
+        .popup-content {
+            font-size: 13px;
+            line-height: 1.4;
+        }
+        .popup-row {
+            margin-bottom: 5px;
+        }
+        .popup-label {
+            font-weight: bold;
+        }
+    </style>
+</head>
+<body>
+    <div id="map"></div>
+    <div class="info-panel">
+        <div class="title">Historical Locations in Lawrence, Kansas</div>
+        <div class="subtitle">Early 1900s Newspaper Records</div>
+        <div>Total Locations: <span id="pointCount">0</span></div>
+    </div>
+    
+    <!-- Leaflet JS -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.js"></script>
+    
+    <script>
+        // Initialize the map centered on an approximate location
+        const map = L.map('map').setView([38.97, -95.23], 14);
+        
+        // Add OpenStreetMap tiles
+        L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+            attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
+        }).addTo(map);
+        
+        // CSV data (parsed from your file)
+        const csvData = [
+            {
+                "Newspaper": "Jeffersonian Gazette",
+                "Date": "5/31/1905",
+                "LocationTitle": "South Park",
+                "KeywordLocation": "",
+                "Affiliations": "John Brown and Frank Grove",
+                "Language": "hoboes; disporting; drunk",
+                "LONGITUDE": -95.23539327,
+                "LATITUDE": 38.96209827
+            },
+            {
+                "Newspaper": "Jeffersonian Gazette",
+                "Date": "7/19/1905",
+                "LocationTitle": "railroad",
+                "KeywordLocation": "",
+                "Affiliations": "Corn and Cobb",
+                "Language": "railroad tresspass",
+                "LONGITUDE": -95.22990339,
+                "LATITUDE": 38.97108002
+            },
+            {
+                "Newspaper": "Daily Gazette",
+                "Date": "2/27/1905",
+                "LocationTitle": "U.P. depot",
+                "KeywordLocation": "lodging house out of the depot",
+                "Affiliations": "three hoboes",
+                "Language": "vagged",
+                "LONGITUDE": -95.230158,
+                "LATITUDE": 38.97109158
+            },
+            {
+                "Newspaper": "Jeffersonian Gazette",
+                "Date": "5/10/1905",
+                "LocationTitle": "U.P. rightaway",
+                "KeywordLocation": "",
+                "Affiliations": "four hoboes",
+                "Language": "built a fire; cold; railroad ties",
+                "LONGITUDE": -95.23336004,
+                "LATITUDE": 38.97840887
+            },
+            {
+                "Newspaper": "Jeffersonian Gazette",
+                "Date": "4/19/1905",
+                "LocationTitle": "City Hall",
+                "KeywordLocation": "",
+                "Affiliations": "four hoboes; Janitor Brown",
+                "Language": "refused to work; threatened; war council",
+                "LONGITUDE": -95.2370681,
+                "LATITUDE": 38.96944434
+            },
+            {
+                "Newspaper": "Daily Gazette",
+                "Date": "7/14/1906",
+                "LocationTitle": "East Bottoms",
+                "KeywordLocation": "joint",
+                "Affiliations": "Aunt Jane Williams",
+                "Language": "Queen of the Bottoms",
+                "LONGITUDE": -95.22916552,
+                "LATITUDE": 38.96869125
+            },
+            {
+                "Newspaper": "Daily Gazette",
+                "Date": "7/14/1906",
+                "LocationTitle": "East Bottoms",
+                "KeywordLocation": "joint",
+                "Affiliations": "John \"Garfield\" Allen",
+                "Language": "",
+                "LONGITUDE": -95.22911595,
+                "LATITUDE": 38.96925202
+            },
+            {
+                "Newspaper": "Lawrence Daily Journal",
+                "Date": "8/27/1906",
+                "LocationTitle": "East Bottoms",
+                "KeywordLocation": "joint",
+                "Affiliations": "Nancy Hawkins",
+                "Language": "",
+                "LONGITUDE": -95.22898008,
+                "LATITUDE": 38.96899411
+            },
+            {
+                "Newspaper": "Lawrence Daily Journal",
+                "Date": "8/27/1906",
+                "LocationTitle": "East Bottoms",
+                "KeywordLocation": "",
+                "Affiliations": "Aunt\" Jane Dixon",
+                "Language": "",
+                "LONGITUDE": -95.22910508,
+                "LATITUDE": 38.96999252
+            },
+            {
+                "Newspaper": "Lawrence Daily Journal",
+                "Date": "8/27/1906",
+                "LocationTitle": "East Bottoms",
+                "KeywordLocation": "joint",
+                "Affiliations": "Ozzie (Rosa) (Osa) Frye",
+                "Language": "",
+                "LONGITUDE": -95.22896773,
+                "LATITUDE": 38.96892277
+            },
+            {
+                "Newspaper": "Lawrence Daily Journal",
+                "Date": "8/27/1906",
+                "LocationTitle": "East Bottoms",
+                "KeywordLocation": "joint",
+                "Affiliations": "Nero \"Bull\" Sparks",
+                "Language": "",
+                "LONGITUDE": -95.22898361,
+                "LATITUDE": 38.96895569
+            },
+            {
+                "Newspaper": "Lawrence Daily Journal",
+                "Date": "8/27/1906",
+                "LocationTitle": "East Bottoms",
+                "KeywordLocation": "joint",
+                "Affiliations": "Minnie Hawkins",
+                "Language": "",
+                "LONGITUDE": -95.23020484,
+                "LATITUDE": 38.96921887
+            },
+            {
+                "Newspaper": "Daily Gazette",
+                "Date": "12/29/1905",
+                "LocationTitle": "East Bottoms",
+                "KeywordLocation": "",
+                "Affiliations": "John \"Bull\" Jenkins",
+                "Language": "",
+                "LONGITUDE": -95.22918357,
+                "LATITUDE": 38.96813133
+            },
+            {
+                "Newspaper": "Lawrence Daily Journal",
+                "Date": "1/7/1907",
+                "LocationTitle": "East Bottoms",
+                "KeywordLocation": "",
+                "Affiliations": "Dolph Burns; John Jenkins",
+                "Language": "shooting",
+                "LONGITUDE": -95.22902703,
+                "LATITUDE": 38.96916825
+            },
+            {
+                "Newspaper": "Lawrence Daily Journal",
+                "Date": "1/7/1907",
+                "LocationTitle": "East Bottoms",
+                "KeywordLocation": "shack",
+                "Affiliations": "Nick Johnson; Dolph Burns; John Jennkins",
+                "Language": "home; shack; beer party",
+                "LONGITUDE": -95.23020653,
+                "LATITUDE": 38.97034949
+            },
+            {
+                "Newspaper": "Daily Gazette",
+                "Date": "6/24/1907",
+                "LocationTitle": "East Bottoms",
+                "KeywordLocation": "house",
+                "Affiliations": "Aunt Jane Williams; Peter Jenkins (old)",
+                "Language": "empty chairs and decrepit tables; joint; dismantled; basement",
+                "LONGITUDE": -95.22920416,
+                "LATITUDE": 38.96811141
+            },
+            {
+                "Newspaper": "Daily Gazette",
+                "Date": "11/11/1910",
+                "LocationTitle": "Watkins Bank",
+                "KeywordLocation": "",
+                "Affiliations": "four hoboes",
+                "Language": "work or die; hitting the pike; north",
+                "LONGITUDE": -95.23539209,
+                "LATITUDE": 38.96217013
+            },
+            {
+                "Newspaper": "Jeffersonian Gazette",
+                "Date": "5/19/1915",
+                "LocationTitle": "Brooks Sparks' Barn",
+                "KeywordLocation": "",
+                "Affiliations": "fourteen hoboes",
+                "Language": "annual migration",
+                "LONGITUDE": -95.23561394,
+                "LATITUDE": 38.9572269
+            },
+            {
+                "Newspaper": "Daily Kansan",
+                "Date": "4/20/1873",
+                "LocationTitle": "Smoker's Row",
+                "KeywordLocation": "tenements; putting up",
+                "Affiliations": "Cinda; Reese Cravens",
+                "Language": "",
+                "LONGITUDE": -95.23221942,
+                "LATITUDE": 38.96380048
+            },
+            {
+                "Newspaper": "Daily Kansan",
+                "Date": "4/20/1873",
+                "LocationTitle": "Greasy Hollow",
+                "KeywordLocation": "",
+                "Affiliations": "Kitty Harris; Mrs. McCruder",
+                "Language": "",
+                "LONGITUDE": -95.23007489,
+                "LATITUDE": 38.97070456
+            },
+            {
+                "Newspaper": "Lawrence Daily Gazette",
+                "Date": "7/28/1894",
+                "LocationTitle": "east bottoms",
+                "KeywordLocation": "house",
+                "Affiliations": "John Johnson; Swede stone cutter; Cyclony",
+                "Language": "drunken fight",
+                "LONGITUDE": -95.23256413,
+                "LATITUDE": 38.97036526
+            },
+            {
+                "Newspaper": "Lawrence Daily Journal",
+                "Date": "7/28/1894",
+                "LocationTitle": "east bottoms",
+                "KeywordLocation": "roofs of coal houses in santa fe yards; near cider mill",
+                "Affiliations": "Chuck\" Carroll; John Brooks",
+                "Language": "rounders; gang; loaf; shoot craps; gamble; drink hard cider; joints; nuisance",
+                "LONGITUDE": -95.22848227,
+                "LATITUDE": 38.96985921
+            },
+            {
+                "Newspaper": "Lawrence Daily Gazette",
+                "Date": "7/17/1894",
+                "LocationTitle": "east bottoms",
+                "KeywordLocation": "willows",
+                "Affiliations": "",
+                "Language": "Kaig party; amusement; kings of east bottoms",
+                "LONGITUDE": -95.22883178,
+                "LATITUDE": 38.97096585
+            },
+            {
+                "Newspaper": "Lawrence Daily Gazette",
+                "Date": "6/18/1894",
+                "LocationTitle": "east bottoms",
+                "KeywordLocation": "santa fe boxcar",
+                "Affiliations": "coxeyites",
+                "Language": "wild revelry",
+                "LONGITUDE": -95.22827963,
+                "LATITUDE": 38.97061892
+            },
+            {
+                "Newspaper": "Lawrence Daily Journal",
+                "Date": "3/28/1894",
+                "LocationTitle": "little island",
+                "KeywordLocation": "one mile below railroad bridge",
+                "Affiliations": "desperados ",
+                "Language": "desperados",
+                "LONGITUDE": -95.22818633,
+                "LATITUDE": 38.97202329
+            },
+            {
+                "Newspaper": "Lawrence Daily Journal",
+                "Date": "3/28/1894",
+                "LocationTitle": "east bottoms",
+                "KeywordLocation": "timber",
+                "Affiliations": "",
+                "Language": "fugitives; camp",
+                "LONGITUDE": -95.22775869,
+                "LATITUDE": 38.97011281
+            },
+            {
+                "Newspaper": "Lawrence Daily World",
+                "Date": "2/14/1894",
+                "LocationTitle": "corner where bums hang",
+                "KeywordLocation": "corner",
+                "Affiliations": "",
+                "Language": "obnoxious; worthless; idling; pitiable; professional bum; negroes; purified;",
+                "LONGITUDE": -95.23585506,
+                "LATITUDE": 38.96935011
+            },
+            {
+                "Newspaper": "Eudora Weekly News",
+                "Date": "2/8/1894",
+                "LocationTitle": "east bottoms",
+                "KeywordLocation": "infamous joint",
+                "Affiliations": "Charles Drake; Harry Reeves; Mrs. Butler; Louisa Drake; \"Cock-eyed\" Spencer",
+                "Language": "infamous; iniquity",
+                "LONGITUDE": -95.23288746,
+                "LATITUDE": 38.96916175
+            },
+            {
+                "Newspaper": "Lawrence Daily Gazette",
+                "Date": "1/27/1894",
+                "LocationTitle": "east bottoms",
+                "KeywordLocation": "6 ft high bluff",
+                "Affiliations": "",
+                "Language": "wild scene; murder",
+                "LONGITUDE": -95.22863809,
+                "LATITUDE": 38.97075063
+            },
+            {
+                "Newspaper": "Lawrence Daily Gazette",
+                "Date": "1/27/1894",
+                "LocationTitle": "Greasy Hollow",
+                "KeywordLocation": "willow trees",
+                "Affiliations": "",
+                "Language": "",
+                "LONGITUDE": -95.22895083,
+                "LATITUDE": 38.97102263
+            },
+            {
+                "Newspaper": "Lawrence Daily Journal",
+                "Date": "11/18/1893",
+                "LocationTitle": "east bottoms",
+                "KeywordLocation": "Santa fe coal chutes",
+                "Affiliations": "",
+                "Language": "",
+                "LONGITUDE": -95.22901667,
+                "LATITUDE": 38.9706015
+            },
+            {
+                "Newspaper": "Lawrence Daily Journal",
+                "Date": "11/9/1893",
+                "LocationTitle": "east bottoms",
+                "KeywordLocation": "santa fe freight house",
+                "Affiliations": "",
+                "Language": "",
+                "LONGITUDE": -95.23022448,
+                "LATITUDE": 38.97105369
+            },
+            {
+                "Newspaper": "weekly record",
+                "Date": "10/7/1892",
+                "LocationTitle": "east bottoms",
+                "KeywordLocation": "Miller's Grove",
+                "Affiliations": "",
+                "Language": "",
+                "LONGITUDE": -95.22180565,
+                "LATITUDE": 38.96214796
+            },
+            {
+                "Newspaper": "Evening Tribune",
+                "Date": "2/13/1890",
+                "LocationTitle": "Poverty Flat/Buzzard's Glen",
+                "KeywordLocation": "Narrow Neck of Land; west of bridge",
+                "Affiliations": "",
+                "Language": "headquarters for fugitives; women; refuge; sweeping out the dust",
+                "LONGITUDE": -95.23612506,
+                "LATITUDE": 38.97704593
+            },
+            {
+                "Newspaper": "Lawrence Daily Journal",
+                "Date": "11/10/1890",
+                "LocationTitle": "Poverty Flat",
+                "KeywordLocation": "block",
+                "Affiliations": "",
+                "Language": "",
+                "LONGITUDE": -95.23598717,
+                "LATITUDE": 38.97723734
+            },
+            {
+                "Newspaper": "Lawrence Daily Journal",
+                "Date": "3/24/1889",
+                "LocationTitle": "Poverty Flat",
+                "KeywordLocation": "old box building",
+                "Affiliations": "John Rogers",
+                "Language": "",
+                "LONGITUDE": -95.23564733,
+                "LATITUDE": 38.97707316
+            },
+            {
+                "Newspaper": "Lawrence Daily Journal",
+                "Date": "9/18/1889",
+                "LocationTitle": "Poverty Flat",
+                "KeywordLocation": "5th Ward",
+                "Affiliations": "3 sisters",
+                "Language": "county jail; fugitives",
+                "LONGITUDE": -95.23595302,
+                "LATITUDE": 38.97697906
+            },
+            {
+                "Newspaper": "Lawrence Daily Journal",
+                "Date": "10/6/1888",
+                "LocationTitle": "Poverty Flat",
+                "KeywordLocation": "North Side; house; old building",
+                "Affiliations": "",
+                "Language": "rough; gun; rock; colored women",
+                "LONGITUDE": -95.23615664,
+                "LATITUDE": 38.97737158
+            },
+            {
+                "Newspaper": "Lawrence Daily Journal",
+                "Date": "12/5/1888",
+                "LocationTitle": "Poverty Flat",
+                "KeywordLocation": "",
+                "Affiliations": "",
+                "Language": "gun shots; mortal combat",
+                "LONGITUDE": -95.23654728,
+                "LATITUDE": 38.97739801
+            },
+            {
+                "Newspaper": "Lawrene Daily World",
+                "Date": "8/25/1892",
+                "LocationTitle": "Bad Lands",
+                "KeywordLocation": "decamped",
+                "Affiliations": "smokey pilgrims; bad lands",
+                "Language": "toughest toughs; bad lands",
+                "LONGITUDE": -95.24123973,
+                "LATITUDE": 38.962144
+            },
+            {
+                "Newspaper": "Lawrence Daily Journal",
+                "Date": "8/12/1892",
+                "LocationTitle": "Smokey Pilgrims",
+                "KeywordLocation": "shanty",
+                "Affiliations": "Taylor; tough part of east Lawrence",
+                "Language": "drunk; shanty; swore; hit; beaten",
+                "LONGITUDE": -95.22925148,
+                "LATITUDE": 38.9703979
+            },
+            {
+                "Newspaper": "Lawrence Daily World",
+                "Date": "8/12/1892",
+                "LocationTitle": "Smokey Pilgrims",
+                "KeywordLocation": "huts",
+                "Affiliations": "Jack Taylor",
+                "Language": "drunk; row; hard cider; badly mutilated",
+                "LONGITUDE": -95.22917446,
+                "LATITUDE": 38.97031038
+            },
+            {
+                "Newspaper": "Lawrence Daily Gazette",
+                "Date": "6/22/1892",
+                "LocationTitle": "Smokey Pilgrims",
+                "KeywordLocation": "haunts",
+                "Affiliations": "",
+                "Language": "",
+                "LONGITUDE": -95.22936404,
+                "LATITUDE": 38.97068346
+            },
+            {
+                "Newspaper": "Lawrence Weekly World; Lawrence Journal",
+                "Date": "6/11/1898",
+                "LocationTitle": "Hoboes",
+                "KeywordLocation": "Porter's Restaurant",
+                "Affiliations": "Porter's Restaurant; J.F. Smith; E. Turner",
+                "Language": "hoboes; drunk; quarellsome",
+                "LONGITUDE": -95.23599418,
+                "LATITUDE": 38.97264309
+            },
+            {
+                "Newspaper": "Lawrence Daily Journal",
+                "Date": "6/25/1900",
+                "LocationTitle": "Bad Lands",
+                "KeywordLocation": "",
+                "Affiliations": "Mollie Jenkins; Will Hayden",
+                "Language": "hell hole",
+                "LONGITUDE": -95.22874996,
+                "LATITUDE": 38.96865536
+            },
+            {
+                "Newspaper": "Lawrence Daily Gazette",
+                "Date": "9/8/1891",
+                "LocationTitle": "Smokey Pilgrims",
+                "KeywordLocation": "\"smokey pilgrim neighborhood\" ",
+                "Affiliations": "",
+                "Language": "",
+                "LONGITUDE": -95.22915076,
+                "LATITUDE": 38.97072492
+            },
+            {
+                "Newspaper": "University Daily Kansan",
+                "Date": "3/8/1910",
+                "LocationTitle": "East Bottoms",
+                "KeywordLocation": "Settlement House",
+                "Affiliations": "Miss Cornelia Hardcastle; Miss Lucile Barrett; Miss Chloe Cory; Miss Veda Walker",
+                "Language": "little urchins of the district; mythological and Bible stories and classical and fairy tales; taught stories of moral uplift almost unconciously",
+                "LONGITUDE": -95.23102495,
+                "LATITUDE": 38.96478976
+            },
+            {
+                "Newspaper": "Lawrence Daily World",
+                "Date": "12/17/1910",
+                "LocationTitle": "East Bottoms",
+                "KeywordLocation": "nuisance; resort; one room shack",
+                "Affiliations": "Roy \"Ringtail\" McGee (Magee); Cliff Thornton; M. Johnson; P.Schrad; A. King; Chas. Johnson; Sam Johnson",
+                "Language": "resort; negroes; squatted; one room shack; empty bottles; jugs; and beer kegs; rushing business",
+                "LONGITUDE": -95.22798854,
+                "LATITUDE": 38.96853341
+            },
+            {
+                "Newspaper": "Daily Gazette",
+                "Date": "3/18/1918",
+                "LocationTitle": "River below town",
+                "KeywordLocation": "",
+                "Affiliations": "hoboes; thirteen year old boy Ermal Tunnell",
+                "Language": "runaway",
+                "LONGITUDE": -95.22881575,
+                "LATITUDE": 38.97132702
+            },
+            {
+                "Newspaper": "Lawrence Democrat",
+                "Date": "11/23/1922",
+                "LocationTitle": "Grocery",
+                "KeywordLocation": "",
+                "Affiliations": "Harry Kane",
+                "Language": "guilty; violation prohibitory law; cherry extracts; rounders and bums of east side",
+                "LONGITUDE": -95.2358712,
+                "LATITUDE": 38.96755919
+            },
+            {
+                "Newspaper": "Lawrence Daily Journal-World",
+                "Date": "10/19/1918",
+                "LocationTitle": "east bottoms",
+                "KeywordLocation": "",
+                "Affiliations": "Elmer Daniels; Henry Scott",
+                "Language": "Black; Boys; shot",
+                "LONGITUDE": -95.22888828,
+                "LATITUDE": 38.9599126
+            },
+            {
+                "Newspaper": "Daily Gazette",
+                "Date": "10/7/1918",
+                "LocationTitle": "east bottoms",
+                "KeywordLocation": "white sector of the East Bottoms",
+                "Affiliations": "Bob Hunter; Zimmerman",
+                "Language": "stabbed",
+                "LONGITUDE": -95.22900014,
+                "LATITUDE": 38.96607805
+            },
+            {
+                "Newspaper": "Lawrence Daily Journal-World",
+                "Date": "10/8/1918",
+                "LocationTitle": "east bottoms",
+                "KeywordLocation": "Mexican sector of the Lawrence East Bottoms district",
+                "Affiliations": "Maximino Pinentel; Jose Roderiguez",
+                "Language": "shot",
+                "LONGITUDE": -95.22878676,
+                "LATITUDE": 38.96922967
+            }
+        ];
+        
+        // Create markers for locations that have coordinates
+        const markers = L.featureGroup();
+        let validPoints = 0;
+        
+        // Define location categories for color coding
+        const locationCategories = {
+            "East Bottoms": "#e41a1c",
+            "Poverty Flat": "#377eb8",
+            "Smokey Pilgrims": "#4daf4a",
+            "Bad Lands": "#984ea3",
+            "default": "#ff7f00"
+        };
+        
+        // Function to get marker color based on location title
+        function getMarkerColor(locationTitle) {
+            const lowerTitle = locationTitle.toLowerCase();
+            
+            for (const category in locationCategories) {
+                if (lowerTitle.includes(category.toLowerCase())) {
+                    return locationCategories[category];
+                }
+            }
+            return locationCategories["default"];
+        }
+        
+        // Create markers for each point
+        csvData.forEach((point, index) => {
+            if (point.LONGITUDE && point.LATITUDE) {
+                validPoints++;
+                
+                // Determine color based on location title
+                const markerColor = getMarkerColor(point.LocationTitle);
+                
+                // Create the popup content
+                const popupContent = `
+                    <div class="popup-title">${point.LocationTitle}</div>
+                    <div class="popup-content">
+                        <div class="popup-row"><span class="popup-label">Newspaper:</span> ${point.Newspaper}</div>
+                        <div class="popup-row"><span class="popup-label">Date:</span> ${point.Date}</div>
+                        ${point.KeywordLocation ? `<div class="popup-row"><span class="popup-label">Location Details:</span> ${point.KeywordLocation}</div>` : ''}
+                        ${point.Affiliations ? `<div class="popup-row"><span class="popup-label">People:</span> ${point.Affiliations}</div>` : ''}
+                        ${point.Language ? `<div class="popup-row"><span class="popup-label">Description:</span> ${point.Language}</div>` : ''}
+                    </div>
+                `;
+                
+                // Create marker with popup
+                const marker = L.circleMarker([point.LATITUDE, point.LONGITUDE], {
+                    radius: 6,
+                    fillColor: markerColor,
+                    color: "#000",
+                    weight: 1,
+                    opacity: 1,
+                    fillOpacity: 0.8
+                }).bindPopup(popupContent, {
+                    className: 'custom-popup',
+                    maxWidth: 300
+                });
+                
+                markers.addLayer(marker);
+            }
+        });
+        
+        // Add the markers to the map
+        map.addLayer(markers);
+        
+        // Fit the map to the bounds of all markers
+        map.fitBounds(markers.getBounds().pad(0.1));
+        
+        // Update point count
+        document.getElementById('pointCount').textContent = validPoints;
+        
+        // Add a legend
+        const legend = L.control({position: 'bottomright'});
+        
+        legend.onAdd = function (map) {
+            const div = L.DomUtil.create('div', 'info legend');
+            div.style.backgroundColor = 'white';
+            div.style.padding = '10px';
+            div.style.borderRadius = '5px';
+            div.style.boxShadow = '0 0 10px rgba(0,0,0,0.2)';
+            
+            let labels = ['<strong>Location Types</strong>'];
+            
+            // Add legend items
+            for (const category in locationCategories) {
+                if (category !== "default") {
+                    labels.push(
+                        `<div style="display: flex; align-items: center; margin-top: 5px;">
+                            <div style="background: ${locationCategories[category]}; width: 12px; height: 12px; border-radius: 50%; margin-right: 5px;"></div>
+                            <div>${category}</div>
+                        </div>`
+                    );
+                }
+            }
+            
+            labels.push(
+                `<div style="display: flex; align-items: center; margin-top: 5px;">
+                    <div style="background: ${locationCategories["default"]}; width: 12px; height: 12px; border-radius: 50%; margin-right: 5px;"></div>
+                    <div>Other Locations</div>
+                </div>`
+            );
+            
+            div.innerHTML = labels.join('<br>');
+            return div;
+        };
+        
+        legend.addTo(map);
+        
+        // Add scale control
+        L.control.scale().addTo(map);
+    </script>
+</body>
+</html>
