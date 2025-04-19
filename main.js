@@ -3,7 +3,7 @@ const map = L.map("map", {
   center: [38.97, -95.23],
   zoom: 15,
   minZoom: 15,
-  maxZoom: 20,
+  maxZoom: 19,
 });
 
 // Add icon colors
@@ -47,7 +47,7 @@ const positron = L.tileLayer(
     attribution:
       '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors &copy; <a href="https://carto.com/">CARTO</a>',
     subdomains: "abcd",
-    maxZoom: 20,
+    maxZoom: 19,
   }
 );
 positron.addTo(map);
@@ -58,7 +58,7 @@ const overlayCommon = {
   tms: 1,
   opacity: 1,
   minZoom: 15,
-  maxZoom: 20,
+  maxZoom: 19,
 };
 const overlay1883 = L.tileLayer("./data/tiles/1883/{z}/{x}/{y}.png", {
   attribution: "1883 Sanborn Map",
